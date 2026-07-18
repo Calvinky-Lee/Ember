@@ -34,9 +34,12 @@ things on every trivial question:
    trivial, medium, or genuinely hard?
 2. **Sends it to the smallest fitting model** (*the router*). Trivial → small
    Llama model. Medium → bigger Llama. Hard → Claude Opus, the best there is.
-3. **Checks the answer before you ever see it** (*the quality gate*). A separate
-   AI — Google's Gemini, deliberately from a different company so it has no
-   loyalty — grades the answer. Good enough? Deliver it. Any doubt? **Escalate**:
+3. **Checks the answer before you ever see it** (*the quality gate*). For medium
+   questions, a separate AI — Google's Gemini, deliberately from a different
+   company so it has no loyalty — grades the answer. For trivial questions, Ember
+   instead reads the small model's own certainty about each word it wrote (free —
+   sending a big referee to check "what's 2+2" would burn more power than the
+   answer itself). Either way: good enough? Deliver it. Any doubt? **Escalate**:
    redo it with the next bigger model. Worst case you always end at Opus. That's
    why quality never drops — being green never beats being right.
 4. **Picks the cleanest place to run** (*carbon-aware placement*). Live data shows

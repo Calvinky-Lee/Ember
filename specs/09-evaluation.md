@@ -34,9 +34,11 @@ For reasoning/open-QA tasks with no deterministic oracle:
   order flipped; verdicts that flip with position are recorded as ties. This
   removes position bias (LLM judges measurably favor the first answer).
 - Output per pair: B wins / tie / B loses → win-rate table.
-- Note the separation of roles: at *runtime* Gemini gates arm B's answers (spec 04);
-  at *evaluation* time it compares both arms blind. Same model, different protocol —
-  the benchmark verdicts never feed back into routing.
+- Note the separation of roles: at *runtime* Gemini gates arm B's moderate-tier
+  answers (trivial tier self-verifies via confidence, D19; spec 04); at *evaluation*
+  time it compares both arms blind. Same model, different protocol — the benchmark
+  verdicts never feed back into routing. The per-tier breakdown below doubles as
+  the check on whether the D19 confidence gate holds parity at the trivial tier.
 
 ### Layer 3 — Judge calibration (how much to trust Layer 2)
 On the ~⅔ of tasks where ground truth exists, also run the judge and report its

@@ -27,13 +27,16 @@ flowchart LR
     E -->|"~60% trivial"| S["Small model (8B)<br/>~0.02 Wh · $0.00001"]
     E -->|"~25% moderate"| M["Mid model (70B)<br/>~0.2 Wh · $0.0004"]
     E -->|"~15% hard"| F["Claude Opus (frontier)<br/>~0.3 Wh · $0.02"]
-    S --> J{"Gemini judge:<br/>good enough?"}
-    M --> J
-    J -->|yes| A["Answer<br/>(Opus-parity, verified)"]
+    S --> SC{"self-confidence<br/>check (free, D19)"}
+    M --> J{"Gemini judge:<br/>good enough?"}
+    SC -->|confident| A["Answer<br/>(Opus-parity, verified)"]
+    J -->|yes| A
     F --> A
+    SC -->|"unsure → escalate"| E
     J -->|"no → escalate one tier"| E
     style E fill:#C05621,color:#fff
     style J fill:#2E6E52,color:#fff
+    style SC fill:#2E6E52,color:#fff
 ```
 
 **The one-line pitch:** *"Same answers as the latest Opus, at a fraction of the cost
