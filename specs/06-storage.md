@@ -29,8 +29,9 @@ Design rules:
 - Writers commit per call, never batch — a crash loses at most one call (resume
   support, spec 05).
 
-## Store API (`backend/db/store.py`) — ✅ built (implemented by P3 to unblock the
-harness; the P1-M2/M3 stubs were unclaimed — P1 pull before continuing)
+## Store API (`backend/db/store.py`) — ✅ built (P1's implementation: WAL + seq
+lock + run lifecycle; P3 added `answer` persistence, the error-row resume filter,
+and the evaluation read helpers below)
 
 ```python
 init_db()

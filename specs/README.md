@@ -15,7 +15,7 @@ and the 4-person delegation (P1–P4 below).
 | 03 | [Measurement](03-measurement.md) | `backend/measurement/` — energy, carbon, cost, labels, SCI | P1 | ✅ built |
 | 04 | [Router & quality gate](04-router.md) | `backend/router/` — classifier, selector, judge, escalation | P2 | 🔨 next |
 | 05 | [Benchmark harness](05-benchmark.md) | `backend/benchmark/` — workloads, A/B runner, scoring, report | P3 | ✅ built (live run awaits P2's `route()` + keys) |
-| 06 | [Storage & events](06-storage.md) | `backend/db/` — SQLite schema + the event-stream contract | P1 | ✅ built (by P3, per frozen contract) |
+| 06 | [Storage & events](06-storage.md) | `backend/db/` — SQLite schema + the event-stream contract | P1 | ✅ built |
 | 07 | [CLI & report](07-cli.md) | `backend/cli.py`, `tui/`, `report_html.py` — commands, race TUI, HTML artifact, MCP stretch | P4 | 🔨 partial |
 | 08 | [Build plan & demo](08-build-plan.md) | 36-hour tracks, demo script, risks | P4 | ✅ locked |
 | 09 | [Evaluation](09-evaluation.md) | Quantifying Ember-vs-all-Opus performance: paired stats, blind judging, parity criterion | P3 | ✅ built |
