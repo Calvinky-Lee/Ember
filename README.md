@@ -4,7 +4,9 @@
 that passes a quality gate — frontier-level answers, without frontier-level waste —
 and every call is scored with a transparent carbon methodology and exact cost.
 
-Built in 36 hours at Hack the 6ix 2026. Full spec: [`EMBER_SPEC.md`](./EMBER_SPEC.md).
+Built in 36 hours at Hack the 6ix 2026. Specs live in [`specs/`](./specs/README.md) —
+one document per technical domain (overview & decisions, architecture, providers,
+measurement, router, benchmark, API/DB, dashboard, build plan, evaluation).
 
 ## The impact chain
 
