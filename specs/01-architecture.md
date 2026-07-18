@@ -1,13 +1,14 @@
 # 01 — Architecture
 
-## System topology
+## System topology (CLI-first — pivot decision, D15)
 
 ```
- client / demo ──► FastAPI ──┬─ /route            one query through Ember
-                             ├─ /benchmark/run    A/B harness (async job)
-                             ├─ /runs/{id}        poll: progress + per-query events
-                             ├─ /report/{id}      SCI/ESG report JSON
-                             └─ /meta/methodology assumptions, sources, factor table
+ terminal ──► ember CLI ──┬─ route "…"      one query through Ember + impact receipt
+                          ├─ benchmark      A/B harness (spend confirm up front)
+                          ├─ race           live/replay TUI: diverging CO₂+$ counters
+                          ├─ report --html  self-contained ESG/SCI artifact
+                          ├─ methodology    audit trail: factors, sources, scope
+                          └─ doctor         keys / data / EM health check
 
  ROUTER: classifier (heuristics + optional cheapest-tier call) → tier
          → selector (greenest candidate region, simulated, labeled)
@@ -18,9 +19,10 @@
               ElectricityMaps client (live → 60s cache → disk snapshot → fallback)
               calculator: gCO2 = kWh × I(zone, t); cost from real price table
 
- DB (SQLite): runs, query_results, carbon_snapshots, reports
+ DB (SQLite): runs, query_results (event stream via seq cursor), snapshots, reports
+              — single source of truth; race view and reports read ONLY from here
 
- DASHBOARD (React+Vite, 1s polling): race view, result card, methodology, ESG report
+ (stretch) MCP server: route_query / carbon_report tools for Claude Desktop/Code
 ```
 
 ## Repository layout
@@ -29,7 +31,9 @@
 ember/
   specs/                    # these documents — one per domain
   backend/
-    app.py                  # FastAPI entry (spec 06)
+    cli.py                  # `ember` entry point (spec 07)
+    tui/                    # spec 07 — Textual race view (P4)
+    report_html.py          # spec 07 — self-contained HTML report (P4)
     config.py               # env, ladder, zones, thresholds — single source of truth
     smoke.py                # Phase-0 gate: one real call through the impact chain
     providers/              # spec 02 — base.py, openai_compat.py, anthropic.py, registry.py
@@ -37,18 +41,18 @@ ember/
     router/                 # spec 04 — classifier.py, selector.py, quality_gate.py, route.py
     benchmark/              # spec 05 — workloads.py, harness.py, scoring.py, report.py
     db/                     # spec 06 — models.py, store.py
-  dashboard/                # spec 07 — React + Vite app
+  tests/                    # offline suite — every test documents what it protects
   data/
     energy_factors.json     # sourced Wh/1k-token rows per model (spec 03)
     price_table.json        # exact USD/1M-token rows per model (spec 03)
     fallback_intensity.json # static labeled gCO2/kWh per zone (spec 03)
     workloads/              # benchmark query sets (spec 05)
     snapshots/              # last-good EM responses (gitignored)
-  pyproject.toml            # uv-managed; `uv sync && uv run python -m backend.smoke`
+  pyproject.toml            # uv-managed; `uv sync && uv run ember doctor`
   .env.example
 ```
 
-## Request lifecycle (`/route`)
+## Request lifecycle (`ember route`)
 
 1. `classifier.classify(query)` → tier ∈ {trivial, moderate, hard} (<300 ms).
 2. `selector.pick_zone()` → greenest candidate zone (simulated placement, labeled).

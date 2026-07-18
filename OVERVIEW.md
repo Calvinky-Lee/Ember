@@ -123,11 +123,11 @@ two live CO₂+$ counters diverging on one screen, backed by this stored run.
 
 ```mermaid
 flowchart TB
-    subgraph FE["dashboard/ — React + Vite (P4)"]
-        RACE["Race view"] --- CARD["Result card"] --- METH["Methodology"] --- ESG["ESG/SCI report"]
+    subgraph FE["ember CLI (P4 owns race/report)"]
+        RACE["ember race<br/>(Textual TUI)"] --- CARD["ember report<br/>--html artifact"] --- METH["ember methodology"] --- DOC["ember doctor"]
     end
-    subgraph BE["backend/ — FastAPI"]
-        API["app.py + db/ (P1)"]
+    subgraph BE["backend/ — Python core"]
+        API["cli.py + db/store (P1)"]
         ROUTER["router/ (P2)<br/>classifier · selector · quality gate"]
         MEAS["measurement/ (P1)<br/>energy · carbon · calculator"]
         BENCH["benchmark/ (P3)<br/>workloads · harness · scoring · evaluation"]
@@ -135,7 +135,7 @@ flowchart TB
     end
     EXT1["Model APIs"] ---- PROV
     EXT2["Electricity Maps"] ---- MEAS
-    FE <-->|"1s polling, JSON contracts (spec 06)"| API
+    FE <-->|"in-process reads of the SQLite event stream (spec 06)"| API
     API --> ROUTER & BENCH
     ROUTER --> PROV & MEAS
     BENCH --> ROUTER & MEAS
@@ -152,17 +152,17 @@ spec 07 — you can build in parallel without waiting on each other.
 
 | Person | Role | Owns (specs) | Directories | First deliverable |
 |---|---|---|---|---|
-| **P1** | Backend core & data | 03 measurement · 06 API/DB | `backend/measurement` `backend/db` `backend/app.py` `data/` | `/runs/{id}` polling endpoint serving real rows (h8) |
+| **P1** | Backend core & data | 03 measurement · 06 storage | `backend/measurement` `backend/db` `data/` | store API (`record_call`, `get_run_events`) serving real rows (h8) |
 | **P2** | Router & providers | 02 providers · 04 router | `backend/providers` `backend/router` | `route()` end-to-end with judge + escalation (h8) |
 | **P3** | Benchmark & evaluation | 05 benchmark · 09 evaluation | `backend/benchmark` `data/workloads` | 150-task workload + resumable harness dry run (h14) |
-| **P4** | Dashboard & demo | 07 dashboard · 08 demo script | `dashboard/` | Race view animating on mock JSON (h8) |
+| **P4** | CLI race view & demo | 07 CLI/report · 08 demo script | `backend/tui/` `backend/report_html.py` | `ember race` animating on synthetic events (h8) |
 
 ```mermaid
 flowchart LR
     P2["P2 router+providers"] -->|"route() result dict (spec 04)"| P3["P3 benchmark+eval"]
     P1["P1 measurement+API"] -->|"measure() records (spec 03)"| P2
     P3 -->|"runs/reports in SQLite"| P1
-    P1 -->|"/runs /report /meta JSON (spec 06)"| P4["P4 dashboard+demo"]
+    P1 -->|"get_run_events / reports (spec 06)"| P4["P4 CLI race+demo"]
     style P1 fill:#C05621,color:#fff
     style P2 fill:#2E6E52,color:#fff
     style P3 fill:#5C6156,color:#fff
@@ -172,8 +172,8 @@ flowchart LR
 **Everyone reads:** this page + spec 00 + spec 01. **Then only your own specs.**
 
 **Sync points (whole team, 10 minutes each):**
-- **h8** — contracts frozen: P1's endpoint shapes and P2's `route()` dict locked; P4 confirms mocks match.
-- **h14** — first integration: dashboard on real endpoints; dry-run 20 tasks; tune `QUALITY_FLOOR` together.
+- **h8** — contracts frozen: P1's event-dict shape and P2's `route()` dict locked; P4 confirms the race view consumes them.
+- **h14** — first integration: `ember benchmark --limit 10` in one terminal, `ember race` following live in another; tune `QUALITY_FLOOR` together.
 - **h20** — full benchmark run (~1 h); everyone reviews the numbers before freeze.
 - **h32** — rehearsal ×2 with Wi-Fi off.
 
