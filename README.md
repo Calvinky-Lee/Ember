@@ -48,6 +48,6 @@ backend/
   router/        difficulty classifier · carbon-aware selector · quality gate
   benchmark/     A/B harness: baseline (all-frontier) vs Ember, same inputs
   db/            SQLite persistence
-dashboard/       React + Vite live comparison dashboard
+cli.py + tui/    the `ember` command: route, benchmark, race (live TUI), report --html
 data/            energy factors, price table, fallback intensities (all sourced)
 ```

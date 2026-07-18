@@ -23,16 +23,18 @@ with a check.
 - [ ] Check: `uv run python -c "from backend.db.store import init_db; init_db()"`
       then inspect with `sqlite3 data/ember.sqlite .schema`.
 
-## M3 — FastAPI endpoints (h5–8) — spec 06 contracts, freeze at h8 sync
-- [ ] `backend/app.py`: implement `/healthz` (keys present? EM reachable? tables
-      loaded?) and `/meta/methodology` (serve the three data files + scope statement).
-- [ ] `POST /route` → call P2's `route()` (stub until theirs lands; integrate at h8).
-- [ ] `POST /benchmark/run` → background task invoking P3's harness; return
-      `run_id` + spend estimate. `GET /runs`, `GET /runs/{id}` (with `after_seq`
-      cursor), `GET /report/{id}` per the JSON shapes in spec 06 — **these shapes
-      are frozen at h8; P4 builds mocks against them.**
-- [ ] CORS for Vite dev origin; error shape `{"error": {"message": ...}}`.
-- [ ] Check: `uv run uvicorn backend.app:app` + `curl localhost:8000/healthz`.
+## M3 — Store API for the CLI (h5–8) — spec 06 contracts, freeze at h8 sync
+(CLI pivot: no FastAPI. `ember doctor`/`ember methodology` already exist in
+`backend/cli.py`; your surface is the store API everything reads from.)
+- [ ] Implement in `backend/db/store.py`: `record_call` (returns seq),
+      `get_run_events(run_id, after_seq)` (ordered — the `ember race` feed),
+      `run_totals`, `completed_tuples` (harness resume), `list_runs`,
+      `save_report`/`load_report` — shapes exactly per spec 06. **Event dict shape
+      is frozen at h8; P4's race view renders it.**
+- [ ] Thread-safety: tiny transactions, commit per call (harness writes from ~4
+      workers).
+- [ ] Check: seed fake rows, `get_run_events(run, after_seq=N)` returns exactly
+      the tail, ordered; restart process → still served.
 
 ## M4 — Labels, spend, resilience (h8–14)
 - [ ] Provenance labels present on every numeric field the API returns (KR3.2 dep).

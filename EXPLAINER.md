@@ -52,10 +52,11 @@ things on every trivial question:
    twice: once "everything to Opus" (how apps work today), once through Ember.
    Same questions, same rules, statistics done properly. Output: *"−X% CO₂,
    answers within Y% of Opus, −Z% cost."*
-7. **Shows it live** (*the dashboard*). Two counters race on screen — pollution
-   and dollars — one for the old way, one for Ember. Plus a methodology page
-   showing every assumption (our audit trail), and an ESG report — the kind of
-   sustainability paperwork companies are increasingly required to file.
+7. **Shows it live** (*the `ember race` command*). Ember is a command-line tool:
+   run `ember race` and two counters race in the terminal — pollution and dollars —
+   one for the old way, one for Ember. `ember methodology` prints every assumption
+   (our audit trail), and `ember report --html` produces an ESG report file — the
+   kind of sustainability paperwork companies are increasingly required to file.
 
 ## What we use, and why (the ingredient list)
 
@@ -65,8 +66,8 @@ things on every trivial question:
 | **Claude Opus** (Anthropic) | The most capable AI model — our quality bar | The "hard" tier, and the thing we prove we match |
 | **Gemini** (Google, sponsor) | Another company's AI | The neutral referee grading answers |
 | **Electricity Maps** | A live world map of "how dirty is electricity right now, per region," fed by official grid operators | Turns energy into pollution numbers; tells the router which region is greenest |
-| **FastAPI + SQLite** (Python) | A small web server and a single-file database | The backend: runs the logic, remembers every call |
-| **React + Vite** | Standard web-app tools | The dashboard people see |
+| **Python + SQLite** | The programming language and a single-file database | The whole engine: runs the logic, remembers every call |
+| **Rich + Textual** | Tools that draw polished interfaces inside a terminal | The live race view and pretty command output people see |
 
 ## How it all connects (one question's journey)
 
@@ -82,7 +83,7 @@ things on every trivial question:
 > straight to Opus → no judge needed (nothing is better than Opus) → receipt
 > written. **Same quality as always — Ember only saves where saving is free.**
 
-The benchmark repeats that journey 150×2 times and the dashboard draws the result.
+The benchmark repeats that journey 150×2 times and `ember race` draws the result.
 
 ## What we do NOT claim (honesty is the strategy)
 
@@ -115,7 +116,7 @@ The benchmark repeats that journey 150×2 times and the dashboard draws the resu
 - **P1** — the receipts and the server (measurement, database, API)
 - **P2** — the dispatcher (classifier, router, judge, escalation)
 - **P3** — the race and the statistics (benchmark, evaluation)
-- **P4** — everything you see (dashboard, demo)
+- **P4** — everything you see (terminal race view, HTML report, demo)
 
 Your personal checklist: `specs/tasks/P<you>.md`. Run the tests any time with
 `uv run pytest` — they're fast, need no keys, and every test explains what it

@@ -28,8 +28,8 @@ Status boxes get ticked in this file as they land (spec-code lockstep rule).
 
 | KR | Target | Owner | Verified by |
 |---|---|---|---|
-| KR3.1 | Methodology view renders 100% of energy factors with source + `params_known` flag | P1+P4 | open view, count rows vs `energy_factors.json` |
-| KR3.2 | Every number in the UI carries a provenance label (`estimated/exact/live/cached/snapshot/fallback/replay`) | P4 | spec-07 acceptance sweep |
+| KR3.1 | `ember methodology` + the HTML report's appendix render 100% of energy factors with source + `params_known` flag | P1+P4 | run command, count rows vs `energy_factors.json` |
+| KR3.2 | Every number in CLI/race/report output carries a provenance label (`estimated/exact/live/cached/snapshot/fallback/replay`) | P4 | spec-07 acceptance sweep |
 | KR3.3 | Factor/price v0 values verified against EcoLogits + provider price pages, sources updated | P1 | data-file `source` fields cite checked URLs/dates |
 | KR3.4 | Judge calibration published (agreement % + false-pass % vs ground truth) | P3 | report `evaluation.layer3` |
 
@@ -37,7 +37,7 @@ Status boxes get ticked in this file as they land (spec-code lockstep rule).
 
 | KR | Target | Owner | Verified by |
 |---|---|---|---|
-| KR4.1 | Airplane-mode test: all four views render with Wi-Fi off after server restart | P1+P4 | do it, hour 26–32 |
+| KR4.1 | Airplane-mode test: `ember race` (replay), `report --html`, and `methodology` all work with Wi-Fi off in a fresh shell | P1+P4 | do it, hour 26–32 |
 | KR4.2 | Demo script rehearsed ×2, timed **under 4 minutes** | P4 (drives), all | stopwatch, hour 32–36 |
 | KR4.3 | Repo public, README + OVERVIEW current, specs match code | all | reviewer skim at freeze |
 | KR4.4 | Live race view runs on real benchmark events, replay tag honest when offline | P4 | spec-07 acceptance |

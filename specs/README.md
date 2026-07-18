@@ -15,8 +15,8 @@ and the 4-person delegation (P1–P4 below).
 | 03 | [Measurement](03-measurement.md) | `backend/measurement/` — energy, carbon, cost, labels, SCI | P1 | ✅ built |
 | 04 | [Router & quality gate](04-router.md) | `backend/router/` — classifier, selector, judge, escalation | P2 | 🔨 next |
 | 05 | [Benchmark harness](05-benchmark.md) | `backend/benchmark/` — workloads, A/B runner, scoring, report | P3 | ⬜ |
-| 06 | [API & database](06-api-db.md) | `backend/app.py`, `backend/db/` — endpoint + schema contracts | P1 | ⬜ |
-| 07 | [Dashboard](07-dashboard.md) | `dashboard/` — views, polling, mock contract, replay mode | P4 | ⬜ |
+| 06 | [Storage & events](06-storage.md) | `backend/db/` — SQLite schema + the event-stream contract | P1 | ⬜ |
+| 07 | [CLI & report](07-cli.md) | `backend/cli.py`, `tui/`, `report_html.py` — commands, race TUI, HTML artifact, MCP stretch | P4 | 🔨 partial |
 | 08 | [Build plan & demo](08-build-plan.md) | 36-hour tracks, demo script, risks | P4 | ✅ locked |
 | 09 | [Evaluation](09-evaluation.md) | Quantifying Ember-vs-all-Opus performance: paired stats, blind judging, parity criterion | P3 | ✅ locked |
 | 10 | [OKRs](10-okrs.md) | Objectives + measurable key results, owners, verification commands, cut-line discipline | all | ✅ locked |
@@ -27,7 +27,7 @@ Sequenced milestones with commands and checks — your day-to-day checklist:
 [P1 backend core](tasks/P1-backend-core.md) ·
 [P2 router & providers](tasks/P2-router-providers.md) ·
 [P3 benchmark & evaluation](tasks/P3-benchmark-evaluation.md) ·
-[P4 dashboard & demo](tasks/P4-dashboard-demo.md)
+[P4 CLI race view & demo](tasks/P4-cli-demo.md)
 
 All module stubs exist in the repo with their contracts in the docstring — grep
 your initials: `grep -rn "P2 owns" backend/`.

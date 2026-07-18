@@ -63,9 +63,9 @@ Stretch prizes (only after MVP): dev-tool SDK (`ember.route()`), leaderboard/bad
 | D12 | Baseline arm | Everything → latest Opus, default region. Extrapolation to fleet volume labeled estimate. |
 | D13 | Workload | ~150 queries: GSM8K subset, hand-written trivial QA/formatting, code tasks with unit-test oracles, light reasoning. Provenance stated. |
 | D14 | Benchmark execution | Interleaved A,B,A,B; K=3; resumable; bounded concurrency ~4 with backoff. Full run stored; demo can replay offline. |
-| D15 | Stack | Python 3.11 + FastAPI + SQLite (SQLAlchemy); React + Vite + Recharts; 1 s polling; localhost. |
-| D16 | Live counters | Smoothly animated between real per-query data points; methodology says so. |
-| D17 | View cut-line | Must-have: race view, result card, methodology, ESG/SCI report. Stretch: leaderboard, badge, SDK. |
+| D15 | Stack | **CLI-first** (pivot): Python 3.11 + SQLite (SQLAlchemy); Rich/Textual terminal UI; self-contained HTML report artifact. No web server, no React. MCP server = stretch layer. |
+| D16 | Live counters | `ember race` TUI counters animate smoothly between real per-event data points; methodology says so. |
+| D17 | Command cut-line | Must-have: `route`, `benchmark`, `race`, `report --html`, `methodology`, `doctor`. Stretch: MCP server, leaderboard, SDK. |
 | D18 | Persistence | All runs persisted; dashboard fully functional offline; live mode degrades to replay with a visible tag — never fake liveness. |
 
 ## Open items
@@ -81,7 +81,7 @@ Stretch prizes (only after MVP): dev-tool SDK (`ember.route()`), leaderboard/bad
 
 1. `python -m backend.benchmark.harness` prints "Ember cut CO₂ by X% at Y% accuracy
    delta vs all-Opus, Z% cost saving" from one command.
-2. The dashboard demo runs end to end with Wi-Fi off (replay mode).
+2. The `ember race` + `ember report --html` demo runs end to end with Wi-Fi off (replay mode).
 3. Every number on screen carries a provenance label (`estimated | live | cached |
    snapshot | fallback | exact`).
 4. Judges can read every energy assumption in the methodology view.
