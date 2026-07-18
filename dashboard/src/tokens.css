@@ -1,0 +1,23 @@
+/* Design tokens — spec 07. Arm colors must be tellable apart across a room. */
+:root {
+  --ground: #FAF9F6;
+  --panel: #F1EFE9;
+  --ink: #24281F;
+  --ink-soft: #5C6156;
+  --line: #DDDACF;
+  --ember: #C05621;   /* Ember arm + accent */
+  --baseline: #8A8F85; /* baseline arm — neutral grey */
+  --moss: #2E6E52;    /* good / clean values */
+  --bad: #B3362B;     /* failures only */
+}
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: Seravek, 'Gill Sans Nova', Ubuntu, Calibri, sans-serif;
+}
+.counter { font-variant-numeric: tabular-nums; }
+.tag {
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+  border: 1px solid currentColor; border-radius: 999px; padding: 0.05em 0.5em;
+}

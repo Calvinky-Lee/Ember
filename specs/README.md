@@ -19,6 +19,18 @@ and the 4-person delegation (P1–P4 below).
 | 07 | [Dashboard](07-dashboard.md) | `dashboard/` — views, polling, mock contract, replay mode | P4 | ⬜ |
 | 08 | [Build plan & demo](08-build-plan.md) | 36-hour tracks, demo script, risks | P4 | ✅ locked |
 | 09 | [Evaluation](09-evaluation.md) | Quantifying Ember-vs-all-Opus performance: paired stats, blind judging, parity criterion | P3 | ✅ locked |
+| 10 | [OKRs](10-okrs.md) | Objectives + measurable key results, owners, verification commands, cut-line discipline | all | ✅ locked |
+
+## Per-person task lists (`tasks/`)
+
+Sequenced milestones with commands and checks — your day-to-day checklist:
+[P1 backend core](tasks/P1-backend-core.md) ·
+[P2 router & providers](tasks/P2-router-providers.md) ·
+[P3 benchmark & evaluation](tasks/P3-benchmark-evaluation.md) ·
+[P4 dashboard & demo](tasks/P4-dashboard-demo.md)
+
+All module stubs exist in the repo with their contracts in the docstring — grep
+your initials: `grep -rn "P2 owns" backend/`.
 
 Rule: when code and spec disagree, fix one of them in the same commit —
 never let them drift silently.
