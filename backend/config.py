@@ -26,6 +26,9 @@ JUDGE_MODEL = os.getenv("JUDGE_MODEL", "gemini:gemini-2.5-flash")
 BASELINE_ZONE = os.getenv("BASELINE_ZONE", "US-MIDA-PJM")
 CARBON_ZONES = [z.strip() for z in os.getenv("CARBON_ZONES", "SE,FR,US-CAL-CISO,CA-ON,PL").split(",") if z.strip()]
 QUALITY_FLOOR = float(os.getenv("QUALITY_FLOOR", "0.85"))
+# Trivial-tier self-confidence gate (D19) — geometric-mean token probability from
+# provider logprobs. Below this, no judge call made; escalate straight to moderate.
+CONFIDENCE_FLOOR = float(os.getenv("CONFIDENCE_FLOOR", "0.80"))
 EM_CACHE_S = int(os.getenv("EM_CACHE_S", "60"))
 PUE = float(os.getenv("PUE_DEFAULT", "1.2"))
 MAX_CONCURRENCY = int(os.getenv("MAX_CONCURRENCY", "4"))

@@ -10,6 +10,7 @@ class ChatResult:
     tokens_out: int
     latency_ms: float
     model_key: str  # "provider:model", the key into factor/price tables
+    confidence: float | None = None  # geometric-mean token probability; None unless requested
 
 
 class ProviderError(Exception):

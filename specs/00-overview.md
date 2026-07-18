@@ -56,7 +56,7 @@ Stretch prizes (only after MVP): dev-tool SDK (`ember.route()`), leaderboard/bad
 | D5 | Placement | Simulated: real Electricity Maps data, real selection logic, labeled "projected — real region selection exists on Bedrock/Azure." |
 | D6 | Deferral/forecast scheduling | Cut from implementation. |
 | D7 | Cost | Real per-token API prices; headline cost saving is exact. Training emissions = embodied, out of scope per SCI (M=0), stated. |
-| D8 | Quality gate | Judge-everything for non-frontier answers. **Parity is the constraint, not a preference — ambiguous verdicts escalate.** Claim is "accuracy within X% of all-Opus baseline," measured. |
+| D8 | Quality gate | Hybrid by tier (revised, see D19): trivial uses a free self-confidence gate, moderate keeps the independent judge, hard is exempt. **Parity is the constraint from moderate tier up, not a preference — ambiguous verdicts escalate.** Claim is "accuracy within X% of all-Opus baseline," measured. |
 | D9 | Judge | Independent family: Gemini Flash scores Llama/mid-tier answers (no self-grading bias). Fallback: judge = one tier up. Judge overhead counts (D4). |
 | D10 | Escalation | One tier at a time, max 2 hops, hard stop at Opus. All escalations logged + shown; healthy band ~10–30%. |
 | D11 | Latency | No hard SLO; record p50/p95 ("and it's faster" is a free demo line). Classifier <300 ms. |
@@ -67,6 +67,7 @@ Stretch prizes (only after MVP): dev-tool SDK (`ember.route()`), leaderboard/bad
 | D16 | Live counters | Smoothly animated between real per-query data points; methodology says so. |
 | D17 | View cut-line | Must-have: race view, result card, methodology, ESG/SCI report. Stretch: leaderboard, badge, SDK. |
 | D18 | Persistence | All runs persisted; dashboard fully functional offline; live mode degrades to replay with a visible tag — never fake liveness. |
+| D19 | Trivial-tier verification | Self-confidence gate replaces the judge at trivial tier only: geometric-mean token probability from provider logprobs, no second model call. Rationale: judge model's own footprint (`wh_per_1k_out: 0.3`) exceeds the trivial model's (`wh_per_1k_out: 0.12`) — judging every trivial answer was taxing the cheapest tier more than the tier's own answer cost. Moderate tier keeps the independent judge (D8/D9) since an unjudged wrong answer there costs real quality or an unnecessary Opus hop. Fallback to independent judge if the trivial model lacks logprobs support. |
 
 ## Open items
 

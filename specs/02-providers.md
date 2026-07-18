@@ -12,11 +12,15 @@ class ChatResult:
     tokens_in: int      # provider usage field — EXACT, never a tokenizer guess
     tokens_out: int
     latency_ms: float
-    model_key: str      # "provider:model" — the key into factor/price tables
+    model_key: str       # "provider:model" — the key into factor/price tables
+    confidence: float | None = None  # geometric-mean token probability, when requested
 
 class ProviderError(Exception): ...
 class MissingUsageError(ProviderError): ...   # response without usage = invalid result
 ```
+`confidence` is `None` unless the caller requests `logprobs=True` (router spec 04
+uses this only for the trivial-tier self-confidence gate) — never estimated or
+backfilled, same "exact or absent" rule as token counts.
 
 ### `openai_compat.py`
 `OpenAICompatProvider(name, base_url, api_key_env)` — one class covers every vendor
@@ -27,6 +31,15 @@ speaking the OpenAI chat-completions protocol:
 
 Non-streaming always (usage field guaranteed). Missing key → `ProviderError` with a
 message that says where to get one.
+
+`chat(..., logprobs: bool = False)` — when set, requests `logprobs=True` on the
+wire and reads `choices[0].logprobs.content` (a list of per-token logprob objects);
+`confidence = exp(mean(token.logprob for token in content))`. If the vendor's
+response has no `logprobs` field despite the request (protocol drift) →
+`confidence` stays `None`, never guessed; the router's fallback (spec 04) covers
+this. Anthropic's Messages API has no logprobs equivalent — not applicable, since
+`AnthropicProvider` only ever serves the hard tier, which skips verification
+entirely.
 
 ### `anthropic.py`
 `AnthropicProvider` — Messages API (`/v1/messages`, `x-api-key`,
@@ -64,6 +77,20 @@ OpenAI-compatible: one line in `openai_compat.PROVIDERS`. Different protocol: ne
 file implementing `.chat(messages, model, **kw) → ChatResult`, register in
 `registry.PROVIDERS`, add factor + price rows (spec 03) — the tables error loudly
 on unknown keys, so you cannot forget.
+
+## Provider-boundary note (D19)
+
+`MODEL_TRIVIAL` must resolve to a provider that speaks the OpenAI-compatible wire
+protocol (`openai_compat.py`), because the trivial tier's verification path
+(`check_confidence`, spec 04) requires `logprobs=True` support to populate
+`ChatResult.confidence`. Verified empirically: Groq/OpenAI/Gemini via
+`openai_compat.py` return real per-token logprobs on request; a unified
+aggregator API (evaluated: Backboard.io) was tested against the same request and
+silently drops `logprobs`/`top_logprobs` — its response schema has no field for
+it, regardless of what the underlying vendor supports. **Do not route the trivial
+tier through any aggregator that doesn't independently confirm logprobs
+pass-through.** Moderate/hard/judge have no such constraint since they don't rely
+on `confidence`.
 
 ## Acceptance criteria
 
