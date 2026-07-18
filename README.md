@@ -5,9 +5,17 @@ that passes a quality gate — frontier-level answers, without frontier-level wa
 and every call is scored with a transparent carbon methodology and exact cost.
 
 Built in 36 hours at Hack the 6ix 2026.
-**New here? Read [`OVERVIEW.md`](./OVERVIEW.md)** — diagrams of how everything
-connects, the main objectives, and who owns what. Detailed specs live in
-[`specs/`](./specs/README.md), one document per technical domain.
+
+**New here?** Read in this order:
+1. [`EXPLAINER.md`](./EXPLAINER.md) — the whole project in plain English: what it
+   does, every feature, what it uses, how it connects. No jargon.
+2. [`OVERVIEW.md`](./OVERVIEW.md) — the technical map: diagrams, objectives,
+   4-person delegation.
+3. [`specs/`](./specs/README.md) — one detailed spec per domain + your personal
+   task list in `specs/tasks/`.
+
+Tests: `uv run pytest` — fast, offline, no keys needed; every test's docstring
+says what it protects and why.
 
 ## The impact chain
 

@@ -12,5 +12,12 @@ dependencies = [
     "sqlalchemy>=2.0",
 ]
 
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
 [tool.setuptools]
 packages = ["backend"]
