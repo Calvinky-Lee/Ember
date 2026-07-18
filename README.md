@@ -4,9 +4,10 @@
 that passes a quality gate — frontier-level answers, without frontier-level waste —
 and every call is scored with a transparent carbon methodology and exact cost.
 
-Built in 36 hours at Hack the 6ix 2026. Specs live in [`specs/`](./specs/README.md) —
-one document per technical domain (overview & decisions, architecture, providers,
-measurement, router, benchmark, API/DB, dashboard, build plan, evaluation).
+Built in 36 hours at Hack the 6ix 2026.
+**New here? Read [`OVERVIEW.md`](./OVERVIEW.md)** — diagrams of how everything
+connects, the main objectives, and who owns what. Detailed specs live in
+[`specs/`](./specs/README.md), one document per technical domain.
 
 ## The impact chain
 
