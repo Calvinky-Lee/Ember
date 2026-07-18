@@ -173,3 +173,42 @@ def test_concurrent_writers_get_unique_contiguous_seqs(db):
     for t in threads:
         t.join()
     assert sorted(seqs) == list(range(1, 101))  # 4×25, unique + contiguous
+
+
+# --- P3 additions: resume-vs-failures, honest latency, evaluation raw material ---
+
+def test_completed_tuples_excludes_error_rows(db):
+    """An ERROR answer row must NOT count as done — resume exists precisely to
+    re-run what failed (spec 05: kill mid-run → resumes). If errors counted as
+    complete, a 429-storm run would resume to a hole-filled dataset."""
+    r = store.create_run("run-1")
+    store.record_call(r, "ok", "a", 0, "answer", _impact())
+    store.record_call(r, "failed", "a", 0, "answer", None,
+                      model_key="m", error="ProviderError: 429")
+    done = store.completed_tuples(r)
+    assert ("ok", "a", 0) in done
+    assert ("failed", "a", 0) not in done
+
+
+def test_query_latencies_sum_arm_b_overhead(db):
+    """The honest p50 (report): arm B's per-query latency must include classifier
+    and judge time — counting only its answer calls would flatter Ember on the
+    'and it's faster' demo line."""
+    r = store.create_run("run-1")
+    store.record_call(r, "t1", "b", 0, "classifier", _impact(), latency_ms=100.0)
+    store.record_call(r, "t1", "b", 0, "answer", _impact(), latency_ms=400.0)
+    store.record_call(r, "t1", "a", 0, "answer", _impact(), latency_ms=800.0)
+    lat = store.get_query_latencies(r)
+    assert lat["b"] == [500.0]
+    assert lat["a"] == [800.0]
+
+
+def test_answer_text_persists_for_blind_judging(db):
+    """Spec 09 layer 2 judges both arms' answer TEXTS blind at evaluation time —
+    if the text doesn't survive the round-trip, the whole layer silently returns
+    zero judgeable pairs."""
+    r = store.create_run("run-1")
+    store.record_call(r, "t1", "b", 0, "answer", _impact(), answer="Because it is less dense.")
+    rows = store.get_answer_rows(r)
+    assert rows[0]["answer"] == "Because it is less dense."
+    assert rows[0]["correct"] is None  # judge-oracle tasks stay unscored at harness time

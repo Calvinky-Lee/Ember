@@ -102,6 +102,7 @@ def record_call(run_id: str, task_id: str, arm: str, k_index: int, role: str,
                 impact: dict | None = None, *, model_key: str | None = None,
                 tier: str | None = None, latency_ms: float = 0.0,
                 score: float | None = None, correct: bool | None = None,
+                answer: str | None = None,
                 escalated_from: str | None = None, error: str | None = None) -> int:
     """Persist one call (answer|classifier|judge) and return its per-run `seq`.
 
@@ -133,6 +134,7 @@ def record_call(run_id: str, task_id: str, arm: str, k_index: int, role: str,
                 energy_label=impact.get("energy_label", "estimated"),
                 score=score,
                 correct=correct_int,
+                answer=answer,
                 escalated_from=escalated_from,
                 error=error,
             ))
@@ -231,7 +233,8 @@ def completed_tuples(run_id: str) -> set[tuple[str, str, int]]:
     with Session(engine) as s:
         rows = s.execute(
             select(QueryResult.task_id, QueryResult.arm, QueryResult.k_index)
-            .where(QueryResult.run_id == run_id, QueryResult.role == "answer")
+            .where(QueryResult.run_id == run_id, QueryResult.role == "answer",
+                   QueryResult.error.is_(None))  # error rows re-run on resume ("accepted")
             .distinct()
         ).all()
         return {(t, a, k) for t, a, k in rows}
@@ -282,3 +285,46 @@ def save_snapshot(zone: str, gco2_per_kwh: float, label: str, fetched_at: str) -
         s.add(CarbonSnapshot(zone=zone, gco2_per_kwh=gco2_per_kwh,
                              label=label, fetched_at=fetched_at))
         s.commit()
+
+
+# --- Evaluation & report reads (spec 09 raw material) -------------------------
+
+def get_answer_rows(run_id: str) -> list[dict]:
+    """Answer-role rows with text + scores — the evaluation module's raw material
+    (spec 09: 'computes all three layers from a finished run's SQLite rows')."""
+    with Session(engine) as s:
+        rows = s.execute(
+            select(QueryResult)
+            .where(QueryResult.run_id == run_id, QueryResult.role == "answer")
+            .order_by(QueryResult.seq)
+        ).scalars().all()
+        return [{
+            "task_id": r.task_id, "arm": r.arm, "k_index": r.k_index,
+            "tier": r.tier, "answer": r.answer, "score": r.score,
+            "correct": None if r.correct is None else bool(r.correct),
+            "error": r.error, "latency_ms": r.latency_ms,
+        } for r in rows]
+
+
+def get_query_latencies(run_id: str) -> dict:
+    """arm → list of per-(task, k) total latencies. Arm B totals include overhead
+    roles (classifier/judge) — comparing only its answer calls against arm A's
+    would flatter Ember; the honest p50 is wall-clock per query."""
+    from collections import defaultdict
+    per_query: dict = defaultdict(float)
+    with Session(engine) as s:
+        rows = s.execute(select(QueryResult)
+                         .where(QueryResult.run_id == run_id)).scalars().all()
+        for r in rows:
+            per_query[(r.arm, r.task_id, r.k_index)] += r.latency_ms or 0.0
+    out: dict = {"a": [], "b": []}
+    for (arm, _t, _k), total in per_query.items():
+        out.setdefault(arm, []).append(total)
+    return out
+
+
+def get_run_config(run_id: str) -> dict:
+    """The reproducibility snapshot stored at create_run time."""
+    with Session(engine) as s:
+        run = s.get(Run, run_id)
+        return json.loads(run.config_json) if run else {}

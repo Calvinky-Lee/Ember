@@ -25,7 +25,13 @@ Y% of all-Opus · −Z% cost (exact)."** Identical inputs, both arms, everything
 | code | 20 | `unit_test` (run against asserts, subprocess, 5 s timeout) | hand-written |
 
 ### `harness.py`
-`run(workload, k=3, limit=None) → run_id`
+`run(workload, k=3, limit=None, assume_yes=False, resume=None) → run_id`
+
+> **Contract note for P2:** each entry of `route()`'s `calls[]` must carry
+> `"role"` (`answer|classifier|judge`) and `"tier"` alongside the `measure()`
+> record — the harness persists one row per call and D4 auditability needs the
+> role. The harness defensively defaults a missing role (final call → `answer`,
+> others → `judge`) but that's a fallback, not the contract.
 - **Interleaved** A,B,A,B per task (D14) — no arm-level batching.
 - Bounded concurrency `MAX_CONCURRENCY` (~4), exponential backoff on 429.
 - **Resumable:** every result committed to SQLite immediately; restart continues

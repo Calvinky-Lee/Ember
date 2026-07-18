@@ -101,9 +101,10 @@ def cmd_route(args) -> int:
 
 
 def cmd_benchmark(args) -> int:
-    from backend.benchmark.harness import run  # P3-M2
+    from backend.benchmark.harness import run
 
-    run_id = run(workload=args.workload, k=args.k, limit=args.limit)
+    run_id = run(workload=args.workload, k=args.k, limit=args.limit,
+                 assume_yes=args.yes, resume=args.resume)
     console.print(f"run complete: {run_id} — view with `ember race {run_id}` / `ember report {run_id}`")
     return 0
 
@@ -128,6 +129,8 @@ def main() -> int:
     bp.add_argument("--workload", default="default")
     bp.add_argument("--k", type=int, default=3)
     bp.add_argument("--limit", type=int, default=None)
+    bp.add_argument("--resume", default=None, metavar="RUN_ID")
+    bp.add_argument("--yes", action="store_true", help="skip the spend confirmation")
     bp.set_defaults(fn=cmd_benchmark)
     rc = sub.add_parser("race")
     rc.add_argument("run_id", nargs="?")

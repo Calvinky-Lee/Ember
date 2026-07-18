@@ -43,7 +43,8 @@ class QueryResult(Base):
     intensity_label: Mapped[str | None]   # live|cached|snapshot|fallback
     energy_label: Mapped[str] = mapped_column(String, default="estimated")
     score: Mapped[float | None]           # judge/oracle score
-    correct: Mapped[int | None]           # 1|0|NULL (overhead rows)
+    correct: Mapped[int | None]           # 1|0|NULL (overhead rows / judge-oracle tasks)
+    answer: Mapped[str | None] = mapped_column(Text)  # answer text (answer rows only) — needed for spec-09 blind pairwise judging
     escalated_from: Mapped[str | None]    # tier this call escalated from
     error: Mapped[str | None]
 

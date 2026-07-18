@@ -14,7 +14,8 @@ query_results  id PK · run_id FK · task_id · arm (a|b) · k_index · seq (eve
                role (answer|classifier|judge) · model_key · tier ·
                tokens_in · tokens_out · wh · gco2 · cost_usd · latency_ms ·
                zone · gco2_per_kwh · intensity_label · energy_label ·
-               score · correct · escalated_from · error
+               score · correct · answer (text, answer rows only — spec-09 blind
+               pairwise judging needs both arms' texts) · escalated_from · error
 carbon_snapshots  zone · gco2_per_kwh · label · fetched_at
 reports        run_id FK · report_json · created_at
 ```
@@ -28,17 +29,25 @@ Design rules:
 - Writers commit per call, never batch — a crash loses at most one call (resume
   support, spec 05).
 
-## Store API (`backend/db/store.py`) — P1-M2/M3
+## Store API (`backend/db/store.py`) — ✅ built (implemented by P3 to unblock the
+harness; the P1-M2/M3 stubs were unclaimed — P1 pull before continuing)
 
 ```python
-init_db()                                   # ✅ built
+init_db()
+create_run(run_id, k, workload)             # opens run + config_json snapshot
+finish_run(run_id, status="done")
 record_call(run_id, task_id, arm, k_index, role, impact, **kw) -> int   # returns seq
 get_run_events(run_id, after_seq=0) -> list[dict]   # ordered, the race-view feed
-run_totals(run_id) -> dict                  # per-arm sums incl. escalation count
-completed_tuples(run_id) -> set             # (task_id, arm, k_index) — harness resume
+run_totals(run_id) -> dict                  # per-arm sums (ALL roles, D4) + escalations
+completed_tuples(run_id) -> set             # (task_id, arm, k_index) of clean ANSWER rows
+get_answer_rows(run_id) -> list[dict]       # evaluation's raw material (spec 09)
+get_run_config(run_id) -> dict
 list_runs() -> list[dict]                   # for `ember race` / `ember report` pickers
 save_report(run_id, report) / load_report(run_id)
 ```
+
+Resume semantics: only clean `answer` rows count as completed — a crash between an
+overhead call and its answer re-runs the whole (task, arm, k) so pairs stay whole.
 
 Event dict shape (what `get_run_events` returns — the contract `ember race`
 renders; keep stable):

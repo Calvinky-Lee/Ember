@@ -33,6 +33,24 @@ def fake_response():
     return FakeResponse
 
 
+@pytest.fixture
+def tmp_store(monkeypatch, tmp_path):
+    """A store module rewired to a throwaway SQLite file. All store functions
+    resolve `store.engine` at call time, so patching the module attribute is
+    enough — no test ever touches data/ember.sqlite (a teammate's real benchmark
+    data must never be corrupted by running the suite)."""
+    from sqlalchemy import create_engine
+
+    from backend.db import store
+    from backend.db.models import Base
+
+    eng = create_engine(f"sqlite:///{tmp_path / 'test.sqlite'}",
+                        connect_args={"check_same_thread": False, "timeout": 30})
+    Base.metadata.create_all(eng)
+    monkeypatch.setattr(store, "engine", eng)
+    return store
+
+
 @pytest.fixture(autouse=True)
 def isolated_carbon(monkeypatch, tmp_path):
     """Every test gets a clean carbon module: empty in-memory cache, a throwaway
