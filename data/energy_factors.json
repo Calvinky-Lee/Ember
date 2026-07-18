@@ -1,0 +1,65 @@
+{
+  "_methodology": "Wh per 1,000 tokens, chip energy only (PUE applied separately by the calculator). Derivation anchor: joules-per-output-token estimates for GPU serving of open-weight models (EcoLogits methodology; 1 J/token = 0.278 Wh/1k tokens). Input (prefill) tokens processed in parallel, costed at ~10% of output (decode) per token. VERIFY these v0 values against EcoLogits published figures during build hours 0-2. Note stated in methodology view: Groq serves on custom LPU hardware; factors model a representative GPU deployment.",
+  "_labels": "every number derived from these factors is ESTIMATED",
+  "groq:llama-3.1-8b-instant": {
+    "wh_per_1k_in": 0.012,
+    "wh_per_1k_out": 0.12,
+    "params_b": 8,
+    "params_known": true,
+    "architecture": "dense",
+    "source": "derived: ~0.43 J/output-token for 8B-class dense on GPU serving (EcoLogits-consistent)",
+    "source_date": "2026-07-18",
+    "assumptions": "GPU serving, bf16/fp8 mixed, batch-served"
+  },
+  "groq:llama-3.3-70b-versatile": {
+    "wh_per_1k_in": 0.1,
+    "wh_per_1k_out": 1.0,
+    "params_b": 70,
+    "params_known": true,
+    "architecture": "dense",
+    "source": "derived: ~3.6 J/output-token for 70B-class dense on GPU serving (EcoLogits-consistent)",
+    "source_date": "2026-07-18",
+    "assumptions": "GPU serving, multi-GPU tensor parallel"
+  },
+  "groq:moonshotai/kimi-k2-instruct": {
+    "wh_per_1k_in": 0.14,
+    "wh_per_1k_out": 1.4,
+    "params_b": 1000,
+    "active_params_b": 32,
+    "params_known": true,
+    "architecture": "MoE",
+    "source": "derived: ~5 J/output-token; MoE activates ~32B params but full weights occupy memory across many devices",
+    "source_date": "2026-07-18",
+    "assumptions": "frontier-class open MoE, GPU serving"
+  },
+  "gemini:gemini-2.5-flash": {
+    "wh_per_1k_in": 0.03,
+    "wh_per_1k_out": 0.3,
+    "params_b": null,
+    "params_known": false,
+    "architecture": "undisclosed",
+    "source": "assumption: fast mid-tier closed model, treated as ~20-70B-class serving cost; params undisclosed by Google",
+    "source_date": "2026-07-18",
+    "assumptions": "STATED GUESS — judge-model overhead, counted against Ember's totals (D4)"
+  },
+  "openai:gpt-4o": {
+    "wh_per_1k_in": 0.15,
+    "wh_per_1k_out": 1.5,
+    "params_b": null,
+    "params_known": false,
+    "architecture": "undisclosed",
+    "source": "assumption: frontier-class closed model, treated as >= kimi-k2 energy; params undisclosed by OpenAI",
+    "source_date": "2026-07-18",
+    "assumptions": "STATED GUESS — surface params_known=false in methodology view"
+  },
+  "anthropic:claude-opus-4-8": {
+    "wh_per_1k_in": 0.15,
+    "wh_per_1k_out": 1.5,
+    "params_b": null,
+    "params_known": false,
+    "architecture": "undisclosed",
+    "source": "assumption: frontier-class closed model; params undisclosed by Anthropic",
+    "source_date": "2026-07-18",
+    "assumptions": "STATED GUESS — surface params_known=false in methodology view"
+  }
+}

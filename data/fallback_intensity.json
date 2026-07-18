@@ -1,0 +1,11 @@
+{
+  "_note": "Static fallback grid carbon intensities, gCO2eq/kWh — approximate recent yearly averages, used ONLY when the Electricity Maps API and last-good snapshot are both unavailable. Numbers derived from these are labeled 'fallback'.",
+  "_source": "Electricity Maps public yearly data, approximate",
+  "SE": 25,
+  "FR": 45,
+  "CA-ON": 60,
+  "US-CAL-CISO": 230,
+  "US-MIDA-PJM": 390,
+  "DE": 350,
+  "PL": 610
+}

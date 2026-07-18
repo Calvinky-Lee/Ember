@@ -1,0 +1,9 @@
+{
+  "_note": "USD per 1M tokens, from provider public price sheets. Cost numbers are EXACT (unlike energy). VERIFY against groq.com/pricing during build hours 0-2.",
+  "groq:llama-3.1-8b-instant": { "usd_per_1m_in": 0.05, "usd_per_1m_out": 0.08 },
+  "groq:llama-3.3-70b-versatile": { "usd_per_1m_in": 0.59, "usd_per_1m_out": 0.79 },
+  "groq:moonshotai/kimi-k2-instruct": { "usd_per_1m_in": 1.0, "usd_per_1m_out": 3.0 },
+  "gemini:gemini-2.5-flash": { "usd_per_1m_in": 0.3, "usd_per_1m_out": 2.5 },
+  "openai:gpt-4o": { "usd_per_1m_in": 2.5, "usd_per_1m_out": 10.0 },
+  "anthropic:claude-opus-4-8": { "usd_per_1m_in": 15.0, "usd_per_1m_out": 75.0 }
+}
