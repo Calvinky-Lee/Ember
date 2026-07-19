@@ -25,11 +25,15 @@ Read first: OVERVIEW.md, specs 00, 01. You own specs 02 (built — maintenance) 
       `BASELINE_ZONE`; label "simulated placement".
 - [ ] `quality_gate.py` — **hybrid by tier (D19), two functions, not one:**
       - `check_confidence(chat_result)` — **trivial tier only.** No second model
-        call. Reads `chat_result.confidence` (geometric-mean token probability,
-        already populated by `registry.chat(..., logprobs=True)` on the trivial
-        call). `pass = score >= config.CONFIDENCE_FLOOR`. Missing/`None`
-        confidence (e.g. resolved model doesn't support logprobs) → fail, caller
-        falls back to `verify()` instead — never silently skip verification.
+        call. Reads `chat_result.confidence`, populated by `route()` via
+        `parse_verbalized_confidence()` parsing the model's own `"CONFIDENCE: X"`
+        line out of its answer text — NOT provider logprobs (Groq rejects that
+        parameter outright, on every model, confirmed live; no viable fallback
+        kept Groq as trivial host, so verbalized confidence replaced the
+        mechanism entirely rather than special-casing it). `pass = score >=
+        config.CONFIDENCE_FLOOR`. Missing/`None` confidence (no parseable
+        confidence line) → fail, caller falls back to `verify()` instead — never
+        silently skip verification.
       - `verify(query, answer)` — **moderate tier only** (hard is exempt). Judge
         prompt (rubric: correctness, completeness, instruction-following → single
         JSON `{"score": 0.0-1.0}`); strict-retry once; unparseable → fail
@@ -44,7 +48,8 @@ Read first: OVERVIEW.md, specs 00, 01. You own specs 02 (built — maintenance) 
 
 ## M4 — route() (h7–8, integrate with P1 at h8 sync) — spec 04
 - [ ] Orchestrate classify → zone → answer with `ladder[tier]` →
-      - trivial → `check_confidence` (request `logprobs=True` on this call only)
+      - trivial → append `TRIVIAL_CONFIDENCE_SUFFIX` to the prompt, parse the
+        answer's `"CONFIDENCE: X"` line, then `check_confidence`
       - moderate → `verify`
       - hard → skip entirely
       → escalate (one rung, ≤2 hops, Opus accepted unjudged). Aggregate `calls[]`

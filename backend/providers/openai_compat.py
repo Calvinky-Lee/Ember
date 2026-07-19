@@ -1,7 +1,6 @@
 """OpenAI-compatible chat completions over httpx. Covers Groq and OpenAI —
 both speak the same wire protocol, only base URL and key differ.
 Non-streaming so the usage field is always present (spec §5)."""
-import math
 import os
 import time
 
@@ -26,8 +25,7 @@ class OpenAICompatProvider:
         return key
 
     def chat(self, messages: list[dict], model: str, *, max_tokens: int = 1024,
-             temperature: float = 0.2, timeout_s: float = 120.0,
-             logprobs: bool = False) -> ChatResult:
+             temperature: float = 0.2, timeout_s: float = 120.0) -> ChatResult:
         t0 = time.monotonic()
         payload = {
             "model": model,
@@ -36,8 +34,6 @@ class OpenAICompatProvider:
             "temperature": temperature,
             "stream": False,
         }
-        if logprobs:
-            payload["logprobs"] = True
         resp = httpx.post(
             f"{self.base_url}/chat/completions",
             headers={"Authorization": f"Bearer {self._key()}"},
@@ -52,18 +48,12 @@ class OpenAICompatProvider:
         if not usage or "prompt_tokens" not in usage or "completion_tokens" not in usage:
             raise MissingUsageError(f"{self.name} response missing usage field")
         choice = body["choices"][0]
-        confidence = None
-        if logprobs:
-            content = (choice.get("logprobs") or {}).get("content")
-            if content:
-                confidence = math.exp(sum(t["logprob"] for t in content) / len(content))
         return ChatResult(
             text=choice["message"]["content"],
             tokens_in=usage["prompt_tokens"],
             tokens_out=usage["completion_tokens"],
             latency_ms=latency_ms,
             model_key=f"{self.name}:{model}",
-            confidence=confidence,
         )
 
 

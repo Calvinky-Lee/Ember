@@ -4,9 +4,16 @@ Two verification paths, chosen by tier (hybrid design, D19):
 check_confidence(chat_result) -> {"score": float, "pass": bool,
                                    "method": "self_confidence", "raw": ...}
 Trivial tier ONLY. No second model call — score is the answering call's own
-geometric-mean token probability (ChatResult.confidence, from provider logprobs).
+self-reported confidence (ChatResult.confidence), verbalized in its own answer
+text and parsed by parse_verbalized_confidence(), NOT provider logprobs (Groq
+rejects the logprobs param outright on every model — confirmed, not a rare gap).
 pass = score >= config.CONFIDENCE_FLOOR. Missing/NaN confidence => fail (escalate).
-If the trivial model doesn't support logprobs, caller falls back to verify().
+If the answer has no parseable confidence line, caller falls back to verify().
+
+parse_verbalized_confidence(text) -> (clean_answer, confidence_or_None)
+Strips the trailing "CONFIDENCE: X" line TRIVIAL_CONFIDENCE_SUFFIX asks the
+trivial-tier model to produce, returning the user-facing answer text separately
+from the parsed float. Works with any provider — no API feature required.
 
 verify(query, answer, zone) -> {"score": float, "pass": bool, "judge_model": str,
                                 "judge_impact": measure-record, "raw": str}
@@ -25,6 +32,29 @@ from backend.providers import registry
 from backend.providers.base import ChatResult, ProviderError
 
 _SCORE_RE = re.compile(r'"score"\s*:\s*([0-9]*\.?[0-9]+)')
+
+TRIVIAL_CONFIDENCE_SUFFIX = (
+    "\n\nAfter your answer, on its own line, write exactly \"CONFIDENCE: X\" "
+    "where X is a number from 0 to 1 for how sure you are this answer is "
+    "fully correct."
+)
+
+_CONFIDENCE_LINE_RE = re.compile(r'(?im)^.*\bconfidence\s*:\s*([01](?:\.\d+)?|\.\d+).*$')
+
+
+def parse_verbalized_confidence(text: str) -> tuple[str, float | None]:
+    """(answer_with_the_confidence_line_stripped, confidence_or_None). Missing or
+    unparseable is a normal outcome, not an error — caller treats None as fail
+    (escalate/fallback), same safe direction as an unparseable judge verdict."""
+    match = _CONFIDENCE_LINE_RE.search(text)
+    if not match:
+        return text.strip(), None
+    try:
+        value = float(match.group(1))
+    except ValueError:
+        return text.strip(), None
+    clean = _CONFIDENCE_LINE_RE.sub("", text, count=1).strip()
+    return clean, value
 
 _RUBRIC_PROMPT = """You are grading an AI assistant's answer for correctness, \
 completeness, and instruction-following.

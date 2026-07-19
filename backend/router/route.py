@@ -6,9 +6,11 @@ Invariants: one rung per hop, <=2 hops, Opus accepted unjudged, totals == sum(ca
 EVERY call (classifier/judge/failed attempts) in calls[] — D4, nothing hidden.
 
 Verification is a hybrid by tier (D19): trivial -> check_confidence (no second
-call, ChatResult.confidence from provider logprobs); moderate -> verify (independent
-judge, Gemini); hard -> skip entirely. A trivial-tier pass contributes exactly one
-call to calls[]; only a moderate check or a trivial-tier escalation adds a second."""
+call, ChatResult.confidence from the answer's own verbalized "CONFIDENCE: X" line
+— NOT provider logprobs, Groq rejects that param outright); moderate -> verify
+(independent judge, Gemini); hard -> skip entirely. A trivial-tier pass
+contributes exactly one call to calls[]; only a moderate check or a trivial-tier
+escalation adds a second."""
 from backend import config
 from backend.measurement.calculator import measure
 from backend.providers import registry
@@ -36,16 +38,28 @@ def route(query: str) -> dict:
         calls.append(classifier_impact)
 
     messages = [{"role": "user", "content": query}]
+    trivial_messages = [
+        {"role": "user", "content": query + quality_gate.TRIVIAL_CONFIDENCE_SUFFIX}
+    ]
     escalations: list[dict] = []
     hops = 0
     answer_text = ""
 
     while True:
-        request_logprobs = tier == "trivial"
-        answer_result = registry.chat(
-            config.MODEL_LADDER[tier], messages, logprobs=request_logprobs
-        )
-        answer_text = answer_result.text
+        prompt_messages = trivial_messages if tier == "trivial" else messages
+        answer_result = registry.chat(config.MODEL_LADDER[tier], prompt_messages)
+
+        if tier == "trivial" and answer_result.confidence is None:
+            # Real usage: the provider layer never sets confidence (D19 uses
+            # verbalized confidence, not logprobs) — parse it from the answer's
+            # own "CONFIDENCE: X" line every time. If something upstream already
+            # supplied a confidence value, trust it instead of re-parsing.
+            clean_text, confidence = quality_gate.parse_verbalized_confidence(answer_result.text)
+            answer_result.confidence = confidence
+            answer_text = clean_text
+        else:
+            answer_text = answer_result.text
+
         answer_impact = measure(
             answer_result.model_key, answer_result.tokens_in, answer_result.tokens_out, zone
         )
@@ -59,12 +73,12 @@ def route(query: str) -> dict:
             score = None
         elif tier == "trivial":
             if answer_result.confidence is None:
-                # Model/provider doesn't support logprobs — never silently skip
+                # No parseable "CONFIDENCE: X" line — never silently skip
                 # verification, fall back to the independent judge instead.
                 verdict = quality_gate.verify(query, answer_text, zone)
                 judge_impact = dict(verdict["judge_impact"])
                 judge_impact["role"] = "judge"
-                judge_impact["fallback"] = "no_logprobs"
+                judge_impact["fallback"] = "unparseable_confidence"
                 calls.append(judge_impact)
             else:
                 verdict = quality_gate.check_confidence(answer_result)

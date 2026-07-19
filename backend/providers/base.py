@@ -10,7 +10,10 @@ class ChatResult:
     tokens_out: int
     latency_ms: float
     model_key: str  # "provider:model", the key into factor/price tables
-    confidence: float | None = None  # geometric-mean token probability; None unless requested
+    confidence: float | None = None  # self-reported answer confidence (0-1); the
+    # provider layer never populates this — router.quality_gate.parse_verbalized_
+    # confidence() sets it after parsing the model's own "CONFIDENCE: X" line (D19).
+    # Not provider logprobs: Groq rejects that API parameter outright.
 
 
 class ProviderError(Exception):

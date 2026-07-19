@@ -13,14 +13,25 @@ class ChatResult:
     tokens_out: int
     latency_ms: float
     model_key: str       # "provider:model" — the key into factor/price tables
-    confidence: float | None = None  # geometric-mean token probability, when requested
+    confidence: float | None = None  # self-reported answer confidence, when parsed
 
 class ProviderError(Exception): ...
 class MissingUsageError(ProviderError): ...   # response without usage = invalid result
 ```
-`confidence` is `None` unless the caller requests `logprobs=True` (router spec 04
-uses this only for the trivial-tier self-confidence gate) — never estimated or
-backfilled, same "exact or absent" rule as token counts.
+`confidence` is always `None` coming out of the provider layer — no provider sets
+it. The router (spec 04) populates it after the fact by parsing the trivial-tier
+model's own verbalized `"CONFIDENCE: X"` line out of its answer text
+(`quality_gate.parse_verbalized_confidence`), not from any API feature.
+
+**This was originally designed around provider `logprobs` instead** (request
+`logprobs=True`, derive confidence from token log-probabilities). Abandoned after
+verifying live: Groq rejects the `logprobs` parameter outright, on every model,
+with no announced timeline (confirmed via a real 400 — `"logprobs is not
+supported with this model"` — and Groq's own community forum). That's a hardware/
+API-level fact, not a rare gap, so there was no viable per-provider fallback that
+kept Groq as the trivial-tier host. Verbalized confidence works with any
+provider, no API feature required, which is why it replaced logprobs entirely
+rather than being bolted on as a special case.
 
 ### `openai_compat.py`
 `OpenAICompatProvider(name, base_url, api_key_env)` — one class covers every vendor
@@ -30,16 +41,8 @@ speaking the OpenAI chat-completions protocol:
 - `gemini` → `https://generativelanguage.googleapis.com/v1beta/openai` (`GEMINI_API_KEY`)
 
 Non-streaming always (usage field guaranteed). Missing key → `ProviderError` with a
-message that says where to get one.
-
-`chat(..., logprobs: bool = False)` — when set, requests `logprobs=True` on the
-wire and reads `choices[0].logprobs.content` (a list of per-token logprob objects);
-`confidence = exp(mean(token.logprob for token in content))`. If the vendor's
-response has no `logprobs` field despite the request (protocol drift) →
-`confidence` stays `None`, never guessed; the router's fallback (spec 04) covers
-this. Anthropic's Messages API has no logprobs equivalent — not applicable, since
-`AnthropicProvider` only ever serves the hard tier, which skips verification
-entirely.
+message that says where to get one. No `logprobs` parameter — see the confidence
+note above for why.
 
 ### `anthropic.py`
 `AnthropicProvider` — Messages API (`/v1/messages`, `x-api-key`,
@@ -80,17 +83,19 @@ on unknown keys, so you cannot forget.
 
 ## Provider-boundary note (D19)
 
-`MODEL_TRIVIAL` must resolve to a provider that speaks the OpenAI-compatible wire
-protocol (`openai_compat.py`), because the trivial tier's verification path
-(`check_confidence`, spec 04) requires `logprobs=True` support to populate
-`ChatResult.confidence`. Verified empirically: Groq/OpenAI/Gemini via
-`openai_compat.py` return real per-token logprobs on request; a unified
-aggregator API (evaluated: Backboard.io) was tested against the same request and
-silently drops `logprobs`/`top_logprobs` — its response schema has no field for
-it, regardless of what the underlying vendor supports. **Do not route the trivial
-tier through any aggregator that doesn't independently confirm logprobs
-pass-through.** Moderate/hard/judge have no such constraint since they don't rely
-on `confidence`.
+None, currently — this is a change from an earlier version of this spec. Trivial
+tier's confidence signal is verbalized (parsed from the answer's own text), not a
+provider API feature, so it has no wire-protocol requirement and can run on any
+provider, including Groq. (History: an earlier design used `logprobs=True`
+instead, which ruled out both Groq — rejects the parameter outright, confirmed
+live — and any aggregator like Backboard.io, whose response schema drops
+`logprobs` regardless of the underlying vendor. That constraint no longer applies
+since the mechanism changed.)
+
+Separately, Backboard.io remains a legitimate execution layer for moderate/hard/
+judge (no confidence dependency there) per the standing project decision to
+consolidate on Backboard wherever there's no technical blocker — see the
+Backboard provider strategy note if adding `backend/providers/backboard.py`.
 
 ## Acceptance criteria
 

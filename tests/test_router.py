@@ -128,9 +128,10 @@ def test_check_confidence_fail_below_floor():
 
 
 def test_check_confidence_missing_confidence_fails_safe():
-    """Missing/NaN confidence (e.g. provider didn't honor logprobs) must fail,
-    not pass-by-default — route() treats this specifically as 'fall back to
-    verify()', so the None must be visible in the verdict, not swallowed."""
+    """Missing/NaN confidence (e.g. the answer had no parseable "CONFIDENCE: X"
+    line) must fail, not pass-by-default — route() treats this specifically as
+    'fall back to verify()', so the None must be visible in the verdict, not
+    swallowed."""
     cr = _chat_result("groq:llama-3.1-8b-instant", confidence=None)
     verdict = quality_gate.check_confidence(cr)
     assert verdict["pass"] is False
@@ -138,6 +139,32 @@ def test_check_confidence_missing_confidence_fails_safe():
 
     cr_nan = _chat_result("groq:llama-3.1-8b-instant", confidence=math.nan)
     assert quality_gate.check_confidence(cr_nan)["pass"] is False
+
+
+def test_parse_verbalized_confidence_extracts_and_strips_the_line():
+    text = "Paris is the capital of France.\nCONFIDENCE: 0.92"
+    clean, conf = quality_gate.parse_verbalized_confidence(text)
+    assert conf == 0.92
+    assert "CONFIDENCE" not in clean
+    assert clean == "Paris is the capital of France."
+
+
+def test_parse_verbalized_confidence_case_insensitive_and_whitespace_tolerant():
+    text = "4\n  confidence:0.5  "
+    clean, conf = quality_gate.parse_verbalized_confidence(text)
+    assert conf == 0.5
+    assert clean == "4"
+
+
+def test_parse_verbalized_confidence_missing_line_returns_none():
+    clean, conf = quality_gate.parse_verbalized_confidence("just an answer, no confidence line")
+    assert conf is None
+    assert clean == "just an answer, no confidence line"
+
+
+def test_parse_verbalized_confidence_unparseable_number_returns_none():
+    clean, conf = quality_gate.parse_verbalized_confidence("answer\nCONFIDENCE: very sure")
+    assert conf is None
 
 
 def test_verify_pass(monkeypatch):
@@ -241,20 +268,21 @@ def test_route_low_confidence_escalates_to_moderate(monkeypatch):
     _assert_totals_match(result)
 
 
-def test_route_no_logprobs_support_falls_back_to_verify_at_trivial_tier(monkeypatch):
-    """Spec 04 edge case: confidence is None because the model/provider doesn't
-    support logprobs -> fall back to the judge for THAT tier, not a tier escalation."""
+def test_route_unparseable_confidence_falls_back_to_verify_at_trivial_tier(monkeypatch):
+    """Spec 04 edge case: no parseable "CONFIDENCE: X" line in the answer (D19 uses
+    verbalized confidence, not provider logprobs — Groq rejects that API param
+    outright) -> fall back to the judge for THAT tier, not a tier escalation."""
     _mock_classifier(monkeypatch, "trivial")
     from backend.providers import registry
-    no_logprobs = _chat_result(config.MODEL_LADDER["trivial"], confidence=None, text="4")
-    monkeypatch.setattr(registry, "chat", _chat_queue([no_logprobs]))
+    no_confidence = _chat_result(config.MODEL_LADDER["trivial"], confidence=None, text="4")
+    monkeypatch.setattr(registry, "chat", _chat_queue([no_confidence]))
     monkeypatch.setattr(quality_gate, "verify", lambda q, a, z: _judge_verdict(0.9, True))
 
     result = route.route("some query")
     assert result["tier_final"] == "trivial"
     assert result["escalations"] == []
     assert [c["role"] for c in result["calls"]] == ["answer", "judge"]
-    assert result["calls"][1]["fallback"] == "no_logprobs"
+    assert result["calls"][1]["fallback"] == "unparseable_confidence"
     _assert_totals_match(result)
 
 

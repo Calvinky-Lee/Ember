@@ -38,22 +38,28 @@ def check_confidence(chat_result: ChatResult) -> dict:
 ```
 - **Trivial tier only.** No second model call — the trust signal rides free on the
   answering call itself.
-- Score = geometric-mean token probability of the generated answer:
-  `exp(mean(token_logprob for token in completion))`, requested via the
-  provider's `logprobs=True` (OpenAI-compatible wire protocol; Groq/OpenAI/Gemini
-  support this, Anthropic does not — irrelevant here since trivial never routes to
-  Anthropic).
-  `pass = score >= config.CONFIDENCE_FLOOR` (default 0.80, tuned on the 20-query
-  dry run alongside `QUALITY_FLOOR`, spec 05).
-- **Why not trust this at moderate/hard**: token-level confidence measures how
-  *predictable* the tokens were, not whether the content is *correct* — a model can
-  be fluently, confidently wrong. Acceptable risk at trivial (cheap to be wrong,
-  cheap to retry); not acceptable once a wrong answer means either shipping a bad
-  answer or an expensive unnecessary hop to Opus.
-- **Fallback**: if the resolved trivial model doesn't support `logprobs` (e.g. a
-  provider override without the OpenAI-compatible wire protocol), fall back to
-  `verify()` (independent judge) for that call — safe direction, never silently
-  skip verification.
+- Score = **verbalized self-confidence**: the trivial-tier prompt appends
+  `quality_gate.TRIVIAL_CONFIDENCE_SUFFIX`, asking the model to end its answer
+  with a `"CONFIDENCE: X"` line (X in 0–1); `route()` parses it out via
+  `quality_gate.parse_verbalized_confidence()`, which also strips that line from
+  the user-facing answer text. `pass = score >= config.CONFIDENCE_FLOOR` (default
+  0.80, tuned on the 20-query dry run alongside `QUALITY_FLOOR`, spec 05).
+  **Not provider logprobs** — an earlier version of this design requested
+  `logprobs=True` and derived confidence from token log-probabilities, but Groq
+  rejects that parameter outright on every model (confirmed via a live 400,
+  `"logprobs is not supported with this model"`, and Groq's own community forum —
+  no announced support timeline). Verbalized confidence needs no API feature, so
+  it works on any provider and doesn't constrain which one hosts the trivial tier.
+- **Why not trust this at moderate/hard**: a model's self-reported confidence is
+  known to be less reliably calibrated than we'd like — a model can state high
+  confidence while being wrong. Acceptable risk at trivial (cheap to be wrong,
+  cheap to retry, and empirically tunable via `CONFIDENCE_FLOOR`); not acceptable
+  once a wrong answer means either shipping a bad answer or an expensive
+  unnecessary hop to Opus.
+- **Fallback**: if the answer has no parseable `"CONFIDENCE: X"` line (model
+  ignored the instruction, malformed number, etc.), fall back to `verify()`
+  (independent judge) for that call, tagged `fallback: "unparseable_confidence"`
+  in `calls[]` — safe direction, never silently skip verification.
 
 ```python
 def verify(query: str, answer: str) -> dict:
@@ -108,10 +114,10 @@ moderate-tier check or a trivial-tier escalation adds a second.
 
 ## Edge cases
 
-- Trivial model doesn't support `logprobs` → fall back to `verify()` (independent
+- Answer has no parseable `"CONFIDENCE: X"` line (model ignored the instruction,
+  malformed number, empty completion) → fall back to `verify()` (independent
   judge) for that call, logged as a fallback — never silently skip verification.
-- Confidence score parses as `NaN`/missing (e.g. empty completion) → treated as
-  fail (safe direction: escalate to moderate).
+- Confidence score parses as `NaN` → treated as fail (safe direction: escalate).
 - Judge unavailable mid-run (key dies, 429 storm) → fallback judge strategy, logged;
   never accept a moderate-tier answer unjudged.
 - Judge scores an Opus escalation's answer low → irrelevant: Opus answers are
@@ -123,8 +129,8 @@ moderate-tier check or a trivial-tier escalation adds a second.
 
 - `route("What is 2+2?")` answers from the trivial tier via `check_confidence`
   only — `calls` has exactly one entry, no judge call present.
-- A trivial-tier answer with deliberately low confidence (e.g. mocked low
-  logprobs) escalates to moderate, where `verify()` runs as normal.
+- A trivial-tier answer with deliberately low self-reported confidence escalates
+  to moderate, where `verify()` runs as normal.
 - A deliberately hard prompt (multi-step proof) escalates at least once and lands
   on Opus, with every hop's impact in `calls`.
 - Sum of `calls` impact == `totals` exactly.
