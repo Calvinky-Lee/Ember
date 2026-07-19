@@ -9,6 +9,8 @@ dependencies = [
     "sqlalchemy>=2.0",
     "rich>=13.7",
     "textual>=0.80",
+    "pymongo>=4.6",
+    "voyageai>=0.2",
 ]
 
 [project.scripts]

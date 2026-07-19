@@ -35,6 +35,25 @@ MAX_CONCURRENCY = int(os.getenv("MAX_CONCURRENCY", "4"))
 
 ELECTRICITYMAPS_TOKEN = os.getenv("ELECTRICITYMAPS_TOKEN", "")
 
+# --- Semantic cache (MongoDB Atlas Vector Search + embeddings) ---------------
+# The greenest query is the one you never send: a near-duplicate of a previously
+# answered query is served from the store instead of a fresh model call. Only the
+# tiny embedding call is spent (counted, D4). Reuses the SQLite core untouched, so
+# the offline demo (KR4.1) is unaffected — the cache is a network-only bonus path.
+MONGODB_URI = os.getenv("MONGODB_URI", "")
+MONGODB_DB = os.getenv("MONGODB_DB", "ember")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "voyage:voyage-3")
+VOYAGE_API_KEY = os.getenv("VOYAGE_API_KEY", "")
+# Atlas vectorSearchScore gate for a cache HIT (cosine normalized to (1+cos)/2).
+# Calibrated on voyage-3 over a varied 5-doc corpus (short + long prompts): genuine
+# same-intent paraphrases scored 0.815–0.892; look-alike-but-different queries
+# (factorial→Fibonacci, French→American Revolution, 30-day→90-day return) scored
+# 0.718–0.776. 0.80 is the max-margin separator and biases toward the safe side —
+# a false HIT breaks answer parity (never traded), a false MISS just routes normally
+# and costs a little saving. Re-tune per embedding model / workload before trusting
+# hits (KR3.3).
+CACHE_SIM_THRESHOLD = float(os.getenv("CACHE_SIM_THRESHOLD", "0.80"))
+
 
 def _load_json(path: Path) -> dict:
     with open(path) as f:
